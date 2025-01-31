@@ -1,0 +1,35 @@
+@import url("https://fonts.googleapis.com/css2?family=Urbanist:ital,wght@0,100..900;1,100..900&display=swap");
+
+* {
+	font-family: "Urbanist", sans-serif;
+	color: white;
+}
+
+.dark-text {
+	color: #010000;
+}
+
+.default-text {
+	color: #eab10f;
+}
+
+.accent-text {
+	color: #b0557d;
+}
+
+.dark-bg {
+	background-color: #010000;
+}
+
+.default-bg {
+	background-color: #eab10f;
+}
+
+.accent-bg {
+	background-color: #b0557d;
+}
+
+nav,
+main {
+	transition: background 0.3s, color 0.3s;
+}
