@@ -13,7 +13,7 @@
 	<main
 		class="{darkMode.state === true
 			? 'dark-bg'
-			: 'default-bg'} flex-grow-1">
+			: 'default-bg'} d-flex flex-grow-1">
 		{@render children()}
 	</main>
 </div>

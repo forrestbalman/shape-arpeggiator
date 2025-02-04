@@ -5,28 +5,46 @@
 	color: white;
 }
 
+:root {
+	--dark: #1b1b1c;
+	--default: #7897c2;
+	--accent: #e8be48;
+}
+
 .dark-text {
-	color: #010000;
+	color: var(--dark);
 }
 
 .default-text {
-	color: #eab10f;
+	color: var(--default);
 }
 
 .accent-text {
-	color: #b0557d;
+	color: var(--accent);
 }
 
 .dark-bg {
-	background-color: #010000;
+	background-color: var(--dark);
 }
 
 .default-bg {
-	background-color: #eab10f;
+	background-color: var(--default);
 }
 
 .accent-bg {
-	background-color: #b0557d;
+	background-color: var(--accent);
+}
+
+.dark-border {
+	border: 2px solid var(--dark);
+}
+
+.default-border {
+	border: 2px solid var(--default);
+}
+
+.accent-border {
+	border: 2px solid var(--accent);
 }
 
 nav,
