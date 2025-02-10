@@ -1,64 +1,37 @@
 <script>
-	import { darkMode } from "$lib/index.svelte.js";
 	import { onMount } from "svelte";
 	import Grid from "$lib/Grid.svelte";
 	import GridControlRange from "$lib/GridControlRange.svelte";
+	import {
+		darkMode,
+		showControls,
+		gridProperties,
+		gridLength,
+	} from "$lib/index.svelte.js";
 
 	let width = $state(0);
 	let height = $state(0);
 	let length = $state(0);
-	let gridProperties = $state({
-		division: 32,
-		low: 20,
-		high: 20000,
-		speed: 1,
-		show: true,
-	});
 	let arp;
 	let playMode = $state(false);
 
 	$effect(() => {
+		// set length to the smaller of width and height of the container
 		if (width >= height) {
 			length = height;
 		} else {
 			length = width;
 		}
 
-		if (gridProperties.low > 20000) {
-			gridProperties.low = 20000;
-		} else if (gridProperties.low < 20) {
-			gridProperties.low = 20;
-		}
+		gridLength.value = length;
 
-		if (gridProperties.high > 20000) {
-			gridProperties.high = 20000;
-		} else if (gridProperties.high < 20) {
-			gridProperties.high = 20;
-		}
-
-		if (isNaN(gridProperties.low)) {
-			gridProperties.low = 20;
-		}
-
-		if (isNaN(gridProperties.high)) {
-			gridProperties.high = 20000;
-		}
-
-		if (
-			gridProperties.low >= gridProperties.high &&
-			gridProperties.high < 20000
-		) {
-			gridProperties.high = gridProperties.low + 1;
-		}
-
-		if (
-			gridProperties.high <= gridProperties.low &&
-			gridProperties.low > 20
-		) {
-			gridProperties.low = gridProperties.high - 1;
-		}
+		// setting low and high frequencies of the axes to make sure they are...
+		// ...within the range of the low and high limits
+		// ...and that low is less than high
+		// ...and that they are numbers
 	});
 
+	// resize function to get the width and height of the container
 	function resize() {
 		width = arp.clientWidth;
 		height = arp.clientHeight;
@@ -72,19 +45,17 @@
 <svelte:window on:resize={resize} />
 
 <section class="container d-flex flex-column flex-grow-1 gap-3 pb-5">
+	<!-- Grid -->
 	<div
-		class="flex-grow-1 d-flex justify-content-center align-items-center position-relative"
+		class="flex-grow-1 d-flex justify-content-center align-items-end position-relative"
 		bind:this={arp}>
 		{#if length >= 300}
-			<div
-				class="rounded-2 {darkMode.state === true
-					? 'default-border'
-					: 'dark-border'}"
-				style="width: {length}px; height: {length}px;">
+			<div class="mb-2" style="width: {length}px; height: {length}px;">
 				<Grid
-					division={gridProperties.division}
-					low={100}
-					high={4000} />
+					division={gridProperties.division.value}
+					speed={gridProperties.speed.value}
+					x={gridProperties.x}
+					y={gridProperties.y} />
 			</div>
 		{:else if length}
 			<div>
@@ -103,50 +74,5 @@
 			</div>
 		{/if}
 	</div>
-	<div class="d-flex justify-content-center" style="min-height: 96px;">
-		<div
-			class="d-flex flex-column gap-2 position-relative"
-			style="width: {length}px;">
-			<button
-				class="w-auto border-0 rounded-1 {gridProperties.show === true
-					? 'bg-danger'
-					: 'bg-success'}"
-				onclick={() => (gridProperties.show = !gridProperties.show)}
-				>{gridProperties.show === false ? "show" : "hide"} controls</button>
-			{#if gridProperties.show}
-				<div class="d-flex justify-content-center gap-2 w-100">
-					<GridControlRange
-						min={4}
-						max={32}
-						step={1}
-						id="division"
-						label="Division"
-						bind:value={gridProperties.division} />
-					<GridControlRange
-						min={20}
-						max={20000}
-						step={1}
-						id="low"
-						label="Low"
-						maxWidth={95}
-						bind:value={gridProperties.low} />
-					<GridControlRange
-						min={20}
-						max={20000}
-						step={1}
-						id="high"
-						label="High"
-						maxWidth={95}
-						bind:value={gridProperties.high} />
-					<GridControlRange
-						min={0.1}
-						max={10}
-						step={0.1}
-						id="speed"
-						label="Speed"
-						bind:value={gridProperties.speed} />
-				</div>
-			{/if}
-		</div>
-	</div>
+	<!-- Controls -->
 </section>
