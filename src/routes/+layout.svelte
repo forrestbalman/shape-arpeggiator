@@ -12,9 +12,9 @@
 <div class="d-flex flex-column min-vh-100 position-relative">
 	<Navbar />
 	<main
-		class="{darkMode.state === true
+		class="d-flex flex-grow-1 {darkMode.state === true
 			? 'dark-bg'
-			: 'default-bg'} d-flex flex-grow-1">
+			: 'default-bg'}">
 		{@render children()}
 	</main>
 </div>

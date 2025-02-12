@@ -6,11 +6,6 @@ export let showControls = $state({
 	state: false,
 });
 export let gridProperties = $state({
-	frequency: {
-		min: 50,
-		max: 4000,
-		step: 1,
-	},
 	division: {
 		min: 4,
 		max: 50,
@@ -34,4 +29,37 @@ export let gridProperties = $state({
 });
 export let gridLength = $state({
 	value: 0,
+});
+export let currentGrid = $state({
+	grid: null,
+	data: {
+		path: null,
+		data: null,
+		loaded: false,
+		coordinateScale: {
+			x: {
+				min: null,
+				max: null,
+			},
+			y: {
+				min: null,
+				max: null,
+			},
+		},
+		timeScale: {
+			min: null,
+			max: null,
+		},
+		gridProperties: {
+			division: 15,
+			x: {
+				low: 62,
+				high: 1984,
+			},
+			y: {
+				low: 93,
+				high: 1715,
+			},
+		},
+	},
 });

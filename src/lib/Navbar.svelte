@@ -1,5 +1,6 @@
 <script>
-	import { darkMode } from "$lib/index.svelte.js";
+	import { darkMode, currentGrid } from "$lib/index.svelte.js";
+	import { meteoriteLandings } from "$lib/data-sonifications/meteorite-landings.svelte.js";
 </script>
 
 <nav class="py-3 {darkMode.state === true ? 'dark-bg' : 'default-bg'}">
@@ -8,25 +9,11 @@
 			class="fs-3 text-decoration-none accent-text"
 			href="https://forrestbalman.com">Forrest</a>
 		<div class="d-flex gap-2">
-			<a
-				class="text-decoration-none {darkMode.state === true
-					? 'default-text'
-					: 'dark-text'}"
-				href="/about">About</a>
 			<button
-				class="text-decoration-none p-0 border-0 bg-transparent {darkMode.state ===
-				true
+				class="bg-transparent border-0 {darkMode.state === true
 					? 'default-text'
 					: 'dark-text'}"
-				role="switch"
-				aria-checked={darkMode.state}
-				on:click={() => (darkMode.state = !darkMode.state)}
-				on:keydown={(e) => {
-					if (e.key === "Enter" || e.key === " ") {
-						darkMode.state = !darkMode.state;
-						e.preventDefault();
-					}
-				}}>{darkMode.state === true ? "Dark" : "Light"}</button>
+				onclick={meteoriteLandings}>Meteorite Landings</button>
 		</div>
 	</div>
 </nav>

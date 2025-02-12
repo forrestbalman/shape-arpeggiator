@@ -1,7 +1,7 @@
 <script>
 	import { onMount } from "svelte";
 	import OSC from "osc-js";
-	import { gridProperties } from "$lib/index.svelte.js";
+	import { gridProperties, currentGrid } from "$lib/index.svelte.js";
 
 	let { division, x, y } = $props();
 
@@ -31,10 +31,57 @@
 		});
 	});
 
+	$effect(() => {
+		if (currentGrid.data.loaded) {
+			const events = [];
+			let counter = 1;
+
+			for (let i = 0; i < currentGrid.data.data.length; i++) {
+				const current = currentGrid.data.data[i];
+
+				events.push({
+					x: Math.floor(
+						linearConversion(
+							current.reclat,
+							currentGrid.data.coordinateScale.x.min,
+							currentGrid.data.coordinateScale.x.max,
+							0,
+							division - 1
+						)
+					),
+					y: Math.floor(
+						linearConversion(
+							current.reclong,
+							currentGrid.data.coordinateScale.y.min,
+							currentGrid.data.coordinateScale.y.max,
+							division - 1,
+							0
+						)
+					),
+					delay:
+						Math.floor(Math.random() * 250) + 50 + counter * 1000,
+				});
+
+				counter++;
+			}
+
+			events.forEach((event) => {
+				setTimeout(() => {
+					gridButtonClick(grid[event.y][event.x]);
+				}, event.delay);
+			});
+		}
+	});
+
 	function linearConversion(value, oldMin, oldMax, newMin, newMax) {
 		return (
 			((value - oldMin) * (newMax - newMin)) / (oldMax - oldMin) + newMin
 		);
+	}
+
+	function sendMessage(address, frequency, volume) {
+		const message = new OSC.Message(address, frequency, volume);
+		osc.send(message);
 	}
 
 	function gridButtonClick(cell) {
@@ -51,130 +98,146 @@
 			nw: cell.index.y < division - 1 && cell.index.x > 0,
 		};
 
-		sendMessage("/origin", cell.frequency.x, 0);
-		sendMessage("/origin", cell.frequency.y, 0);
+		sendMessage("/origin", cell.frequency.x, 1);
+		sendMessage("/origin", cell.frequency.y, 1);
 
 		// If there is a neighbor to the north
 		if (neighbors.n) {
-			const distanceToEdge = division - 1;
-
+			const distanceToEdge = division - cell.index.y - 1;
+			const events = [];
 			let counter = 1;
+
 			for (let i = cell.index.y + 1; i < division; i++) {
-				setTimeout(
-					() => {
-						const current = grid[division - i - 1][cell.index.x];
+				const volume = 0.7 - (counter / distanceToEdge) * 0.65;
 
-						current.light = true;
-
-						sendMessage(
-							"/north",
-							current.frequency.y,
-							-1 * counter
-						);
-
-						setTimeout(() => {
-							current.light = false;
-						}, speedDivision * 1000);
-					},
-					speedDivision * counter * 1000
-				);
+				events.push({
+					current: grid[division - i - 1][cell.index.x],
+					delay: speedDivision * counter * 1000,
+					volume: volume,
+				});
 
 				counter++;
 			}
+
+			events.forEach((event) => {
+				setTimeout(() => {
+					event.current.light = true;
+
+					sendMessage(
+						"/north",
+						event.current.frequency.y,
+						event.volume
+					);
+
+					setTimeout(() => {
+						event.current.light = false;
+					}, speedDivision * 1000);
+				}, event.delay);
+			});
 		}
 
 		//If there is a neighbor to the east
 		if (neighbors.e) {
-			const distanceToEdge = division - 1 - cell.index.x;
-
+			const events = [];
 			let counter = 1;
+
 			for (let i = cell.index.x + 1; i < division; i++) {
-				setTimeout(
-					() => {
-						const current = grid[division - cell.index.y - 1][i];
+				const volume =
+					0.7 - (counter / (division - cell.index.x - 1)) * 0.65;
 
-						current.light = true;
-
-						sendMessage(
-							"/east",
-							current.frequency.x,
-							speedDivision
-						);
-
-						setTimeout(() => {
-							current.light = false;
-						}, speedDivision * 1000);
-					},
-					speedDivision * counter * 1000
-				);
+				events.push({
+					current: grid[division - cell.index.y - 1][i],
+					delay: speedDivision * counter * 1000,
+					volume: volume,
+				});
 
 				counter++;
 			}
+
+			events.forEach((event) => {
+				setTimeout(() => {
+					event.current.light = true;
+
+					sendMessage(
+						"/east",
+						event.current.frequency.x,
+						event.volume
+					);
+
+					setTimeout(() => {
+						event.current.light = false;
+					}, speedDivision * 1000);
+				}, event.delay);
+			});
 		}
 
 		// If there is a neighbor to the south
 		if (neighbors.s) {
-			const distanceToEdge = cell.index.y;
-
+			const events = [];
 			let counter = 1;
+
 			for (let i = division - cell.index.y; i < division; i++) {
-				setTimeout(
-					() => {
-						const current = grid[i][cell.index.x];
+				const volume =
+					0.7 - (counter / (division - cell.index.y)) * 0.65;
 
-						current.light = true;
-
-						sendMessage(
-							"/south",
-							current.frequency.y,
-							speedDivision
-						);
-
-						setTimeout(() => {
-							current.light = false;
-						}, speedDivision * 1000);
-					},
-					speedDivision * counter * 1000
-				);
+				events.push({
+					current: grid[i][cell.index.x],
+					delay: speedDivision * counter * 1000,
+					volume: volume,
+				});
 
 				counter++;
 			}
+
+			events.forEach((event) => {
+				setTimeout(() => {
+					event.current.light = true;
+
+					sendMessage(
+						"/south",
+						event.current.frequency.y,
+						event.volume
+					);
+
+					setTimeout(() => {
+						event.current.light = false;
+					}, speedDivision * 1000);
+				}, event.delay);
+			});
 		}
 
 		// If there is a neighbor to the west
 		if (neighbors.w) {
-			const distanceToEdge = cell.index.x;
-
+			const events = [];
 			let counter = 1;
+
 			for (let i = cell.index.x - 1; i >= 0; i--) {
-				setTimeout(
-					() => {
-						const current = grid[division - cell.index.y - 1][i];
-						const volume = linearConversion(
-							i,
-							0,
-							distanceToEdge,
-							-6,
-							-36
-						);
+				const volume = 0.7 - (counter / cell.index.x) * 0.65;
 
-						current.light = true;
-
-						sendMessage(
-							"/west",
-							current.frequency.x,
-							speedDivision
-						);
-
-						setTimeout(() => {
-							current.light = false;
-						}, speedDivision * 1000);
-					},
-					speedDivision * counter * 1000
-				);
+				events.push({
+					current: grid[division - cell.index.y - 1][i],
+					delay: speedDivision * counter * 1000,
+					volume: volume,
+				});
 
 				counter++;
 			}
+
+			events.forEach((event) => {
+				setTimeout(() => {
+					event.current.light = true;
+
+					sendMessage(
+						"/west",
+						event.current.frequency.x,
+						event.volume
+					);
+
+					setTimeout(() => {
+						event.current.light = false;
+					}, speedDivision * 1000);
+				}, event.delay);
+			});
 		}
 
 		grid.forEach((row) => {
@@ -190,11 +253,6 @@
 			},
 			speedDivision * 2 * 1000
 		);
-
-		function sendMessage(address, frequency, time) {
-			const message = new OSC.Message(address, frequency, time);
-			osc.send(message);
-		}
 	}
 
 	onMount(() => {
@@ -205,10 +263,9 @@
 	});
 </script>
 
-<div class="position-relative w-100 h-100" style="padding: 3px;">
+<div class="position-relative w-100 h-100">
 	<div
-		class="d-flex justify-content-center align-items-center flex-wrap w-100 h-100"
-		style="gap: 3px;">
+		class="d-flex justify-content-center align-items-center flex-wrap w-100 h-100">
 		{#each grid as row}
 			<div
 				class="d-flex justify-content-center align-items-center w-100"
