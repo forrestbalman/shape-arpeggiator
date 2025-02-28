@@ -1,11 +1,24 @@
 import { fetchAndParseCSV } from "$lib/data.svelte.js";
-import { gridProperties, currentGrid } from "$lib/index.svelte.js";
+import {
+	gridProperties,
+	currentGrid,
+	showControls,
+} from "$lib/index.svelte.js";
 
 const path = "/data/Meteorite_Landings.csv";
 
+export const meteoriteTheme = $state({
+	text: "#f0dadb",
+	background: "#1c1f48",
+	light: "#8b8ce5",
+	accent: "#da4526",
+});
+
 export function meteoriteLandings() {
+	showControls.state = false;
 	// Set the patch to the url of the CSV file
 	currentGrid.data.path = path;
+	currentGrid.theme = meteoriteTheme;
 
 	// Turn the CSV file into an array of objects, then...
 	fetchAndParseCSV(path).then((data) => {
@@ -13,12 +26,21 @@ export function meteoriteLandings() {
 		// Make sure the meteorite has a year and a mass
 		// Sort the data by year
 		// Limit the data to 100 entries (because the performance is supposed to be about a minute)
+		const uniqueCoordinates = new Set();
 		const filteredData = data
 			.filter(
 				(meteorite) =>
 					meteorite.year !== null || meteorite["mass (g)"] !== null
 			)
-			.sort((a, b) => a.year - b.year)
+			.filter((meteorite) => {
+				const coordinates = `${meteorite.reclat},${meteorite.reclong}`;
+				if (uniqueCoordinates.has(coordinates)) {
+					return false;
+				} else {
+					uniqueCoordinates.add(coordinates);
+					return true;
+				}
+			})
 			.slice(0, 100);
 
 		// Update the data to be the data after the curation
@@ -88,26 +110,8 @@ export function meteoriteLandings() {
 		currentGrid.data.timeScale.min = smallestTime;
 		currentGrid.data.timeScale.max = largestTime;
 
-		const properties = {
-			division: 15,
-			speed: 0.7,
-			x: {
-				low: 62,
-				high: 1984,
-			},
-			y: {
-				low: 93,
-				high: 1715,
-			},
-		};
-
-		gridProperties.division.value = properties.division;
-		gridProperties.speed.value = properties.speed;
-		gridProperties.x.low = properties.x.low;
-		gridProperties.x.high = properties.x.high;
-		gridProperties.y.low = properties.y.low;
-		gridProperties.y.high = properties.y.high;
-
 		currentGrid.data.loaded = true;
+
+		console.log(filteredData);
 	});
 }

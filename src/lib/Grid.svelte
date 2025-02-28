@@ -1,112 +1,360 @@
 <script>
 	import { onMount } from "svelte";
 	import OSC from "osc-js";
-	import { gridProperties, currentGrid } from "$lib/index.svelte.js";
+	import {
+		gridProperties,
+		currentGrid,
+		showControls,
+		defaultTheme,
+	} from "$lib/index.svelte.js";
 
-	let { division, x, y } = $props();
-
-	let grid = $state([]);
 	let osc;
 
-	// $effect() is a function that runs when any of the variables inside of it
-	// ...change. In this case, it runs when division changes.
 	$effect(() => {
-		// returns the number of cells in the grid
-		// I need to do this because the array isn't created yet and I need to
-		// ...know the max index for the frequency conversion
-		const maxIndex = Math.pow(division, 2) - 1;
+		if (gridProperties.scale.value === "chromatic") {
+			const ratio = Math.pow(2, 1 / gridProperties.scale.edo);
+			const scale = [];
 
-		// set the grid to an array with a number of empty slots equal to the
-		// number of cells per side
-		grid = Array.from({ length: division }, (_, i) => {
-			// fill each empty slot with an array of empty slots equal to the number of
-			// ...cells per side to create the 2D grid
-			return Array.from({ length: division }, (_, j) => {
-				// in each slot, create an object that holds:
-				// - the x and y coordinates of the cell, as well as the index
-				// - the frequencies for each axis
-				// - a variable to hold the light state
-				// - a variable to hold the color (experimental)
-				const index = (division - 1 - i) * division + j;
-				return {
-					index: {
-						x: j,
-						y: division - 1 - i,
-						number: index,
-					},
-					frequency: {
-						x: linearConversion(index, 0, maxIndex, x.low, x.high),
-						y: linearConversion(index, 0, maxIndex, y.low, y.high),
-					},
-					light: false,
-					color: null,
-				};
-			});
-		});
+			for (
+				let i = 0;
+				i < Math.pow(gridProperties.division.value, 2);
+				i++
+			) {
+				const xFrequency = gridProperties.x.low * Math.pow(ratio, i);
+				const yFrequency = gridProperties.y.low * Math.pow(ratio, i);
+
+				if (xFrequency >= 20000 || yFrequency >= 20000) {
+					break;
+				}
+
+				scale.push([xFrequency, yFrequency]);
+			}
+
+			gridProperties.division.value = nearestSquareNumber(scale.length);
+			gridProperties.x.high = scale[scale.length - 1][0];
+			gridProperties.y.high = scale[scale.length - 1][1];
+		} else if (gridProperties.scale.value === "major") {
+			const ratio = Math.pow(2, 1 / 12);
+			const scale = [];
+			const majorSteps = [0, 2, 4, 5, 7, 9, 11];
+
+			let octave = 0;
+			let index = 0;
+
+			while (true) {
+				const semitoneStep = majorSteps[index] + octave * 12;
+				const xFrequency =
+					gridProperties.x.low * Math.pow(ratio, semitoneStep);
+				const yFrequency =
+					gridProperties.y.low * Math.pow(ratio, semitoneStep);
+
+				if (xFrequency >= 20000 || yFrequency >= 20000) {
+					break;
+				}
+
+				scale.push([xFrequency, yFrequency]);
+				index++;
+
+				if (index >= majorSteps.length) {
+					index = 0;
+					octave++;
+				}
+			}
+
+			gridProperties.division.value = nearestSquareNumber(scale.length);
+			gridProperties.x.high = scale[scale.length - 1][0];
+			gridProperties.y.high = scale[scale.length - 1][1];
+		} else if (gridProperties.scale.value === "minor") {
+			const ratio = Math.pow(2, 1 / 12);
+			const scale = [];
+			const minorSteps = [0, 2, 3, 5, 7, 8, 10];
+
+			let octave = 0;
+			let index = 0;
+
+			while (true) {
+				const semitoneStep = minorSteps[index] + octave * 12;
+				const xFrequency =
+					gridProperties.x.low * Math.pow(ratio, semitoneStep);
+				const yFrequency =
+					gridProperties.y.low * Math.pow(ratio, semitoneStep);
+
+				if (xFrequency >= 20000 || yFrequency >= 20000) {
+					break;
+				}
+
+				scale.push([xFrequency, yFrequency]);
+				index++;
+
+				if (index >= minorSteps.length) {
+					index = 0;
+					octave++;
+				}
+			}
+
+			gridProperties.division.value = nearestSquareNumber(scale.length);
+			gridProperties.x.high = scale[scale.length - 1][0];
+			gridProperties.y.high = scale[scale.length - 1][1];
+		} else if (gridProperties.scale.value === "pentatonic") {
+			const ratio = Math.pow(2, 1 / 12);
+			const scale = [];
+			const pentatonicSteps = [0, 2, 4, 7, 9];
+
+			let octave = 0;
+			let index = 0;
+
+			while (true) {
+				const semitoneStep = pentatonicSteps[index] + octave * 12;
+				const xFrequency =
+					gridProperties.x.low * Math.pow(ratio, semitoneStep);
+				const yFrequency =
+					gridProperties.y.low * Math.pow(ratio, semitoneStep);
+
+				if (xFrequency >= 20000 || yFrequency >= 20000) {
+					break;
+				}
+
+				scale.push([xFrequency, yFrequency]);
+				index++;
+
+				if (index >= pentatonicSteps.length) {
+					index = 0;
+					octave++;
+				}
+			}
+
+			gridProperties.division.value = nearestSquareNumber(scale.length);
+			gridProperties.x.high = scale[scale.length - 1][0];
+			gridProperties.y.high = scale[scale.length - 1][1];
+		} else if (gridProperties.scale.value === "diminished") {
+			const ratio = Math.pow(2, 1 / 12);
+			const scale = [];
+			const diminishedSteps = [0, 2, 3, 5, 6, 8, 9, 11];
+
+			let octave = 0;
+			let index = 0;
+
+			while (true) {
+				const semitoneStep = diminishedSteps[index] + octave * 12;
+				const xFrequency =
+					gridProperties.x.low * Math.pow(ratio, semitoneStep);
+				const yFrequency =
+					gridProperties.y.low * Math.pow(ratio, semitoneStep);
+
+				if (xFrequency >= 20000 || yFrequency >= 20000) {
+					break;
+				}
+
+				scale.push([xFrequency, yFrequency]);
+				index++;
+
+				if (index >= diminishedSteps.length) {
+					index = 0;
+					octave++;
+				}
+			}
+
+			gridProperties.division.value = nearestSquareNumber(scale.length);
+			gridProperties.x.high = scale[scale.length - 1][0];
+			gridProperties.y.high = scale[scale.length - 1][1];
+		}
+
+		currentGrid.grid = createGrid(
+			gridProperties.division.value,
+			gridProperties.x.low,
+			gridProperties.x.high,
+			gridProperties.y.low,
+			gridProperties.y.high,
+			gridProperties.scale.value,
+			gridProperties.scale.edo
+		);
 	});
 
 	// This runs when the currentGrid data changes (used for data sonification)
 	$effect(() => {
-		// If the data is loaded...
-		if (currentGrid.data.loaded) {
-			// The events array will store all of the data to schedule
-			const events = [];
-
-			// The counter is used primarily to calculate the delay
-			let counter = 1;
-
-			// This loop runs for the number of data points in the currentGrid
-			for (let i = 0; i < currentGrid.data.data.length; i++) {
-				// The current data point
-				const current = currentGrid.data.data[i];
-
-				// Add an object to the events array with the current cell:
-				// - the x and y coordinates of the cell
-				// - how far in the future the event will occur
-				events.push({
-					x: Math.floor(
-						linearConversion(
-							current.reclat,
-							currentGrid.data.coordinateScale.x.min,
-							currentGrid.data.coordinateScale.x.max,
-							0,
-							division - 1
-						)
-					),
-					y: Math.floor(
-						linearConversion(
-							current.reclong,
-							currentGrid.data.coordinateScale.y.min,
-							currentGrid.data.coordinateScale.y.max,
-							division - 1,
-							0
-						)
-					),
-					delay:
-						Math.floor(Math.random() * 250) + 50 + counter * 1000,
-				});
-
-				// The counter gets incremented by 1 for each loop iteration
-				counter++;
+		if (currentGrid.data.loaded && !currentGrid.data.events) {
+			initializeEvents();
+			if (!currentGrid.playAlong) {
+				scheduleEvents();
+			} else {
+				promptNextEvent();
 			}
-
-			// Now that the events array is filled with all of the data we need
-			// ... to schedule future events, we loop through it.
-			events.forEach((event) => {
-				// setTimeout() delays code from happening until a time has elapsed
-				// ...based on the delay in the event object
-				setTimeout(() => {
-					// Simulate a button click with the coordinates from the data
-					gridButtonClick(grid[event.y][event.x]);
-				}, event.delay);
-			});
 		}
 	});
+
+	$effect(() => {
+		if (showControls.state && currentGrid.data.events) {
+			if (currentGrid.playAlong) {
+				currentGrid.playAlong = false;
+				currentGrid.playAlongIndex = 0;
+				resetCurrentGridData();
+			} else {
+				clearEvents();
+			}
+		}
+	});
+
+	function initializeEvents() {
+		currentGrid.data.events = [];
+		let counter = 1;
+
+		currentGrid.data.data.forEach((current, i) => {
+			currentGrid.data.events.push({
+				index: i,
+				x: calculateCoordinate(
+					current.reclat,
+					currentGrid.data.coordinateScale.x,
+					0,
+					gridProperties.division.value - 1
+				),
+				y: calculateCoordinate(
+					current.reclong,
+					currentGrid.data.coordinateScale.y,
+					gridProperties.division.value - 1,
+					0
+				),
+				delay: Math.floor(Math.random() * 250) + 50 + counter * 1000,
+				current,
+			});
+			counter++;
+		});
+	}
+
+	function calculateCoordinate(value, scale, newMin, newMax) {
+		return Math.floor(
+			linearConversion(value, scale.min, scale.max, newMin, newMax)
+		);
+	}
+
+	function scheduleEvents() {
+		currentGrid.data.eventIds = [];
+		currentGrid.data.events.forEach((event) => {
+			const id = setTimeout(() => {
+				gridButtonClick(currentGrid.grid[event.y][event.x]);
+				if (event.index === currentGrid.data.events.length - 1) {
+					setTimeout(clearEvents, 2000);
+				}
+			}, event.delay);
+			currentGrid.data.eventIds.push(id);
+		});
+	}
+
+	function clearEvents() {
+		currentGrid.data.eventIds.forEach((id) => clearTimeout(id));
+		resetCurrentGridData();
+	}
+
+	function resetCurrentGridData() {
+		currentGrid.data = {
+			events: null,
+			eventIds: null,
+			path: null,
+			data: null,
+			loaded: false,
+			coordinateScale: {
+				x: {
+					min: null,
+					max: null,
+				},
+				y: {
+					min: null,
+					max: null,
+				},
+			},
+			timeScale: {
+				min: null,
+				max: null,
+			},
+		};
+	}
 
 	function linearConversion(value, oldMin, oldMax, newMin, newMax) {
 		return (
 			((value - oldMin) * (newMax - newMin)) / (oldMax - oldMin) + newMin
 		);
+	}
+
+	function logarithmicConversion(value, oldMin, oldMax, newMin, newMax) {
+		const logMin = Math.log(newMin);
+		const logMax = Math.log(newMax);
+		const scale = (logMax - logMin) / (oldMax - oldMin);
+		return Math.exp(logMin + scale * (value - oldMin));
+	}
+
+	function nearestSquareNumber(n) {
+		return Math.round(Math.sqrt(n));
+	}
+
+	function createGrid(length, x1, x2, y1, y2, scale, division) {
+		const ratio = Math.pow(2, 1 / division);
+		const maxIndex = Math.pow(length, 2) - 1;
+
+		const createCell = (index, x, y, frequencyX, frequencyY) => ({
+			index: { x, y, number: index },
+			frequency: { x: Number(frequencyX), y: Number(frequencyY) },
+			light: false,
+			color: null,
+		});
+
+		const generateGrid = (frequencyFunc) =>
+			Array.from({ length }, (_, i) =>
+				Array.from({ length }, (_, j) => {
+					const index = (length - 1 - i) * length + j;
+					const x = j;
+					const y = length - 1 - i;
+					const [frequencyX, frequencyY] = frequencyFunc(index);
+					return createCell(index, x, y, frequencyX, frequencyY);
+				})
+			);
+
+		const frequencyFuncs = {
+			default: (index) => [
+				logarithmicConversion(index, 0, maxIndex, x1, x2),
+				logarithmicConversion(index, 0, maxIndex, y1, y2),
+			],
+			chromatic: (index) => [
+				x1 * Math.pow(ratio, index),
+				y1 * Math.pow(ratio, index),
+			],
+			major: (index) => {
+				const majorSteps = [0, 2, 4, 5, 7, 9, 11];
+				const octave = Math.floor(index / majorSteps.length);
+				const step = index % majorSteps.length;
+				return [
+					x1 * Math.pow(ratio, majorSteps[step] + octave * 12),
+					y1 * Math.pow(ratio, majorSteps[step] + octave * 12),
+				];
+			},
+			minor: (index) => {
+				const minorSteps = [0, 2, 3, 5, 7, 8, 10];
+				const octave = Math.floor(index / minorSteps.length);
+				const step = index % minorSteps.length;
+				return [
+					x1 * Math.pow(ratio, minorSteps[step] + octave * 12),
+					y1 * Math.pow(ratio, minorSteps[step] + octave * 12),
+				];
+			},
+			pentatonic: (index) => {
+				const pentatonicSteps = [0, 2, 4, 7, 9];
+				const octave = Math.floor(index / pentatonicSteps.length);
+				const step = index % pentatonicSteps.length;
+				return [
+					x1 * Math.pow(ratio, pentatonicSteps[step] + octave * 12),
+					y1 * Math.pow(ratio, pentatonicSteps[step] + octave * 12),
+				];
+			},
+			diminished: (index) => {
+				const diminishedSteps = [0, 2, 3, 5, 6, 8, 9, 11];
+				const octave = Math.floor(index / diminishedSteps.length);
+				const step = index % diminishedSteps.length;
+				return [
+					x1 * Math.pow(ratio, diminishedSteps[step] + octave * 12),
+					y1 * Math.pow(ratio, diminishedSteps[step] + octave * 12),
+				];
+			},
+		};
+
+		return generateGrid(frequencyFuncs[scale] || frequencyFuncs.default);
 	}
 
 	// Sends a message to the Max patch through osc-js
@@ -124,20 +372,24 @@
 		// it's equal to the speed (measured in seconds) divided by the
 		// ...number of divisions. We subtract 1 because the first cell
 		// ...starts at 0
-		const speedDivision = gridProperties.speed.value / (division - 1);
+		const speedDivision = gridProperties.speed.value * 1000;
 
 		// Checks to see if there are any neighboring cells
 		// Each variable will return true or false depending on if the cell
 		// ...is at the edge of the grid
 		const neighbors = {
 			// north neighbors won't exceed the top edge of the grid
-			n: cell.index.y < division - 1,
+			n: cell.index.y < gridProperties.division.value - 1,
 			// north-east neighbors won't exceed the top or right edge of the grid
-			ne: cell.index.y < division - 1 && cell.index.x < division - 1,
+			ne:
+				cell.index.y < gridProperties.division.value - 1 &&
+				cell.index.x < gridProperties.division.value - 1,
 			// east neighbors won't exceed the right edge of the grid
-			e: cell.index.x < division - 1,
+			e: cell.index.x < gridProperties.division.value - 1,
 			// south-east neighbors won't exceed the bottom or right edge of the grid
-			se: cell.index.y > 0 && cell.index.x < division - 1,
+			se:
+				cell.index.y > 0 &&
+				cell.index.x < gridProperties.division.value - 1,
 			// south neighbors won't exceed the bottom edge of the grid
 			s: cell.index.y > 0,
 			// south-west neighbors won't exceed the bottom or left edge of the grid
@@ -145,189 +397,649 @@
 			// west neighbors won't exceed the left edge of the grid
 			w: cell.index.x > 0,
 			// north-west neighbors won't exceed the top or left edge of the grid
-			nw: cell.index.y < division - 1 && cell.index.x > 0,
+			nw:
+				cell.index.y < gridProperties.division.value - 1 &&
+				cell.index.x > 0,
 		};
 
 		// Sends out the "origin" messages to the Max patch
 		// Two messages are sent, one for each axis
 		// All chained events will only send out one message
 		// ...based on the axis it's traveling on
-		sendMessage("/origin", cell.frequency.x, 1);
-		sendMessage("/origin", cell.frequency.y, 1);
-
-		// If there is a neighbor to the north...
-		if (neighbors.n) {
-			// The distance to the edge of the grid is unique for each
-			// ...cell. In this case, it's the index subtracted from
-			// ...the number of divisions. We subtract 1 because the
-			// ...first cell starts at 0
-			const distanceToEdge = division - cell.index.y - 1;
-
-			// The events array will store all of the data to schedule
-			// ...the event chain later.
-			const events = [];
-
-			// The counter is used primarily to calculate the volume
-			// ...the i from the loop would normally be used, but
-			// ...it doesn't start at 1, so I create a separate variable
-			let counter = 1;
-
-			// This loop's length is equal to the distance from the button
-			// ...to the edge of the grid, starting at the cell's x and y
-			// ...coordinates.
-			for (let i = cell.index.y + 1; i < division; i++) {
-				// The volume is decreased by a small amount for each step
-				// ...away from the button.
-				const volume = 0.7 - (counter / distanceToEdge) * 0.65;
-
-				// Add an object to the events array with the current cell,
-				// ... how far in the future the event will occur, and volume
-				events.push({
-					current: grid[division - i - 1][cell.index.x],
-					delay: speedDivision * counter * 1000,
-					volume: volume,
-				});
-
-				// The counter gets incremented by 1 for each loop iteration
-				counter++;
-			}
-
-			// Now that the events array is filled with all of the data we need
-			// ... to schedule future events, we loop through it.
-			// forEach() is a method that loops through arrays in particular
-			events.forEach((event) => {
-				// setTimeout() delays code from happening until a time has elapsed
-				setTimeout(() => {
-					// The current cell's light is set to true
-					event.current.light = true;
-
-					// Send the message to the Max patch with the address, frequency,
-					// ... and volume
-					sendMessage(
-						"/north",
-						event.current.frequency.y,
-						event.volume
-					);
-
-					// Turn the light off after a short delay
-					setTimeout(() => {
-						event.current.light = false;
-					}, speedDivision * 1000);
-
-					// Schedule this event to happen after a delay
-				}, event.delay);
-			});
+		if (gridProperties.testMode.x) {
+			sendMessage("/origin", cell.frequency.x, 1);
 		}
 
-		//If there is a neighbor to the east
-		if (neighbors.e) {
-			const events = [];
-			let counter = 1;
-
-			for (let i = cell.index.x + 1; i < division; i++) {
-				const volume =
-					0.7 - (counter / (division - cell.index.x - 1)) * 0.65;
-
-				events.push({
-					current: grid[division - cell.index.y - 1][i],
-					delay: speedDivision * counter * 1000,
-					volume: volume,
-				});
-
-				counter++;
-			}
-
-			events.forEach((event) => {
-				setTimeout(() => {
-					event.current.light = true;
-
-					sendMessage(
-						"/east",
-						event.current.frequency.x,
-						event.volume
-					);
-
-					setTimeout(() => {
-						event.current.light = false;
-					}, speedDivision * 1000);
-				}, event.delay);
-			});
+		if (gridProperties.testMode.y) {
+			sendMessage("/origin", cell.frequency.y, 1);
 		}
 
-		// If there is a neighbor to the south
-		if (neighbors.s) {
-			const events = [];
-			let counter = 1;
-
-			for (let i = division - cell.index.y; i < division; i++) {
-				const volume =
-					0.7 - (counter / (division - cell.index.y)) * 0.65;
-
-				events.push({
-					current: grid[i][cell.index.x],
-					delay: speedDivision * counter * 1000,
-					volume: volume,
-				});
-
-				counter++;
-			}
-
-			events.forEach((event) => {
-				setTimeout(() => {
-					event.current.light = true;
-
-					sendMessage(
-						"/south",
-						event.current.frequency.y,
-						event.volume
-					);
-
-					setTimeout(() => {
-						event.current.light = false;
-					}, speedDivision * 1000);
-				}, event.delay);
-			});
+		if (gridProperties.testMode.x && gridProperties.testMode.y) {
+			sendMessage("/origin", cell.frequency.x, 1);
+			sendMessage("/origin", cell.frequency.y, 1);
 		}
 
-		// If there is a neighbor to the west
-		if (neighbors.w) {
-			const events = [];
-			let counter = 1;
+		if (!gridProperties.testMode.x && !gridProperties.testMode.y) {
+			sendMessage("/origin", cell.frequency.x, 1);
+			sendMessage("/origin", cell.frequency.y, 1);
 
-			for (let i = cell.index.x - 1; i >= 0; i--) {
-				const volume = 0.7 - (counter / cell.index.x) * 0.65;
+			if (gridProperties.axisLimit.y && !gridProperties.axisLimit.x) {
+				// If there is a neighbor to the north...
+				if (neighbors.n) {
+					// The distance to the edge of the grid is unique for each
+					// ...cell. In this case, it's the index subtracted from
+					// ...the number of divisions. We subtract 1 because the
+					// ...first cell starts at 0
+					const distanceToEdge =
+						gridProperties.division.value - cell.index.y - 1;
 
-				events.push({
-					current: grid[division - cell.index.y - 1][i],
-					delay: speedDivision * counter * 1000,
-					volume: volume,
-				});
+					// The events array will store all of the data to schedule
+					// ...the event chain later.
+					const events = [];
 
-				counter++;
+					// The counter is used primarily to calculate the volume
+					// ...the i from the loop would normally be used, but
+					// ...it doesn't start at 1, so I create a separate variable
+					let counter = 1;
+
+					// This loop's length is equal to the distance from the button
+					// ...to the edge of the grid, starting at the cell's x and y
+					// ...coordinates.
+					for (
+						let i = cell.index.y + 1;
+						i < gridProperties.division.value;
+						i++
+					) {
+						// The volume is decreased by a small amount for each step
+						// ...away from the button.
+						const volume = 0.7 - (counter / distanceToEdge) * 0.65;
+
+						// Add an object to the events array with the current cell,
+						// ... how far in the future the event will occur, and volume
+						events.push({
+							current:
+								currentGrid.grid[
+									gridProperties.division.value - i - 1
+								][cell.index.x],
+							delay: speedDivision * counter,
+							volume: volume,
+						});
+
+						// The counter gets incremented by 1 for each loop iteration
+						counter++;
+					}
+
+					// Now that the events array is filled with all of the data we need
+					// ... to schedule future events, we loop through it.
+					// forEach() is a method that loops through arrays in particular
+					events.forEach((event) => {
+						// setTimeout() delays code from happening until a time has elapsed
+						setTimeout(() => {
+							// The current cell's light is set to true
+							event.current.light = true;
+
+							// Send the message to the Max patch with the address, frequency,
+							// ... and volume
+							sendMessage(
+								"/north",
+								event.current.frequency.y,
+								event.volume
+							);
+
+							// Turn the light off after a short delay
+							setTimeout(() => {
+								event.current.light = false;
+							}, speedDivision);
+
+							// Schedule this event to happen after a delay
+						}, event.delay);
+					});
+				}
+
+				// If there is a neighbor to the south
+				if (neighbors.s) {
+					const events = [];
+					let counter = 1;
+
+					for (
+						let i = gridProperties.division.value - cell.index.y;
+						i < gridProperties.division.value;
+						i++
+					) {
+						const volume =
+							0.7 -
+							(counter /
+								(gridProperties.division.value -
+									cell.index.y)) *
+								0.65;
+
+						events.push({
+							current: currentGrid.grid[i][cell.index.x],
+							delay: speedDivision * counter,
+							volume: volume,
+						});
+
+						counter++;
+					}
+
+					events.forEach((event) => {
+						setTimeout(() => {
+							event.current.light = true;
+
+							sendMessage(
+								"/south",
+								event.current.frequency.y,
+								event.volume
+							);
+
+							setTimeout(() => {
+								event.current.light = false;
+							}, speedDivision);
+						}, event.delay);
+					});
+				}
 			}
 
-			events.forEach((event) => {
-				setTimeout(() => {
-					event.current.light = true;
+			if (gridProperties.axisLimit.x && !gridProperties.axisLimit.y) {
+				//If there is a neighbor to the east
+				if (neighbors.e) {
+					const events = [];
+					let counter = 1;
 
-					sendMessage(
-						"/west",
-						event.current.frequency.x,
-						event.volume
-					);
+					for (
+						let i = cell.index.x + 1;
+						i < gridProperties.division.value;
+						i++
+					) {
+						const volume =
+							0.7 -
+							(counter /
+								(gridProperties.division.value -
+									cell.index.x -
+									1)) *
+								0.65;
 
-					setTimeout(() => {
-						event.current.light = false;
-					}, speedDivision * 1000);
-				}, event.delay);
-			});
+						events.push({
+							current:
+								currentGrid.grid[
+									gridProperties.division.value -
+										cell.index.y -
+										1
+								][i],
+							delay: speedDivision * counter,
+							volume: volume,
+						});
+
+						counter++;
+					}
+
+					events.forEach((event) => {
+						setTimeout(() => {
+							event.current.light = true;
+
+							sendMessage(
+								"/east",
+								event.current.frequency.x,
+								event.volume
+							);
+
+							setTimeout(() => {
+								event.current.light = false;
+							}, speedDivision);
+						}, event.delay);
+					});
+				}
+
+				// If there is a neighbor to the west
+				if (neighbors.w) {
+					const events = [];
+					let counter = 1;
+
+					for (let i = cell.index.x - 1; i >= 0; i--) {
+						const volume = 0.7 - (counter / cell.index.x) * 0.65;
+
+						events.push({
+							current:
+								currentGrid.grid[
+									gridProperties.division.value -
+										cell.index.y -
+										1
+								][i],
+							delay: speedDivision * counter,
+							volume: volume,
+						});
+
+						counter++;
+					}
+
+					events.forEach((event) => {
+						setTimeout(() => {
+							event.current.light = true;
+
+							sendMessage(
+								"/west",
+								event.current.frequency.x,
+								event.volume
+							);
+
+							setTimeout(() => {
+								event.current.light = false;
+							}, speedDivision);
+						}, event.delay);
+					});
+				}
+			}
+
+			if (gridProperties.axisLimit.x && gridProperties.axisLimit.y) {
+				// If there is a neighbor to the north...
+				if (neighbors.n) {
+					// The distance to the edge of the grid is unique for each
+					// ...cell. In this case, it's the index subtracted from
+					// ...the number of divisions. We subtract 1 because the
+					// ...first cell starts at 0
+					const distanceToEdge =
+						gridProperties.division.value - cell.index.y - 1;
+
+					// The events array will store all of the data to schedule
+					// ...the event chain later.
+					const events = [];
+
+					// The counter is used primarily to calculate the volume
+					// ...the i from the loop would normally be used, but
+					// ...it doesn't start at 1, so I create a separate variable
+					let counter = 1;
+
+					// This loop's length is equal to the distance from the button
+					// ...to the edge of the grid, starting at the cell's x and y
+					// ...coordinates.
+					for (
+						let i = cell.index.y + 1;
+						i < gridProperties.division.value;
+						i++
+					) {
+						// The volume is decreased by a small amount for each step
+						// ...away from the button.
+						const volume = 0.7 - (counter / distanceToEdge) * 0.65;
+
+						// Add an object to the events array with the current cell,
+						// ... how far in the future the event will occur, and volume
+						events.push({
+							current:
+								currentGrid.grid[
+									gridProperties.division.value - i - 1
+								][cell.index.x],
+							delay: speedDivision * counter,
+							volume: volume,
+						});
+
+						// The counter gets incremented by 1 for each loop iteration
+						counter++;
+					}
+
+					// Now that the events array is filled with all of the data we need
+					// ... to schedule future events, we loop through it.
+					// forEach() is a method that loops through arrays in particular
+					events.forEach((event) => {
+						// setTimeout() delays code from happening until a time has elapsed
+						setTimeout(() => {
+							// The current cell's light is set to true
+							event.current.light = true;
+
+							// Send the message to the Max patch with the address, frequency,
+							// ... and volume
+							sendMessage(
+								"/north",
+								event.current.frequency.y,
+								event.volume
+							);
+
+							// Turn the light off after a short delay
+							setTimeout(() => {
+								event.current.light = false;
+							}, speedDivision);
+
+							// Schedule this event to happen after a delay
+						}, event.delay);
+					});
+				}
+
+				// If there is a neighbor to the south
+				if (neighbors.s) {
+					const events = [];
+					let counter = 1;
+
+					for (
+						let i = gridProperties.division.value - cell.index.y;
+						i < gridProperties.division.value;
+						i++
+					) {
+						const volume =
+							0.7 -
+							(counter /
+								(gridProperties.division.value -
+									cell.index.y)) *
+								0.65;
+
+						events.push({
+							current: currentGrid.grid[i][cell.index.x],
+							delay: speedDivision * counter,
+							volume: volume,
+						});
+
+						counter++;
+					}
+
+					events.forEach((event) => {
+						setTimeout(() => {
+							event.current.light = true;
+
+							sendMessage(
+								"/south",
+								event.current.frequency.y,
+								event.volume
+							);
+
+							setTimeout(() => {
+								event.current.light = false;
+							}, speedDivision);
+						}, event.delay);
+					});
+				}
+
+				//If there is a neighbor to the east
+				if (neighbors.e) {
+					const events = [];
+					let counter = 1;
+
+					for (
+						let i = cell.index.x + 1;
+						i < gridProperties.division.value;
+						i++
+					) {
+						const volume =
+							0.7 -
+							(counter /
+								(gridProperties.division.value -
+									cell.index.x -
+									1)) *
+								0.65;
+
+						events.push({
+							current:
+								currentGrid.grid[
+									gridProperties.division.value -
+										cell.index.y -
+										1
+								][i],
+							delay: speedDivision * counter,
+							volume: volume,
+						});
+
+						counter++;
+					}
+
+					events.forEach((event) => {
+						setTimeout(() => {
+							event.current.light = true;
+
+							sendMessage(
+								"/east",
+								event.current.frequency.x,
+								event.volume
+							);
+
+							setTimeout(() => {
+								event.current.light = false;
+							}, speedDivision);
+						}, event.delay);
+					});
+				}
+
+				// If there is a neighbor to the west
+				if (neighbors.w) {
+					const events = [];
+					let counter = 1;
+
+					for (let i = cell.index.x - 1; i >= 0; i--) {
+						const volume = 0.7 - (counter / cell.index.x) * 0.65;
+
+						events.push({
+							current:
+								currentGrid.grid[
+									gridProperties.division.value -
+										cell.index.y -
+										1
+								][i],
+							delay: speedDivision * counter,
+							volume: volume,
+						});
+
+						counter++;
+					}
+
+					events.forEach((event) => {
+						setTimeout(() => {
+							event.current.light = true;
+
+							sendMessage(
+								"/west",
+								event.current.frequency.x,
+								event.volume
+							);
+
+							setTimeout(() => {
+								event.current.light = false;
+							}, speedDivision);
+						}, event.delay);
+					});
+				}
+			}
+
+			if (!gridProperties.axisLimit.x && !gridProperties.axisLimit.y) {
+				// If there is a neighbor to the north...
+				if (neighbors.n) {
+					// The distance to the edge of the grid is unique for each
+					// ...cell. In this case, it's the index subtracted from
+					// ...the number of divisions. We subtract 1 because the
+					// ...first cell starts at 0
+					const distanceToEdge =
+						gridProperties.division.value - cell.index.y - 1;
+
+					// The events array will store all of the data to schedule
+					// ...the event chain later.
+					const events = [];
+
+					// The counter is used primarily to calculate the volume
+					// ...the i from the loop would normally be used, but
+					// ...it doesn't start at 1, so I create a separate variable
+					let counter = 1;
+
+					// This loop's length is equal to the distance from the button
+					// ...to the edge of the grid, starting at the cell's x and y
+					// ...coordinates.
+					for (
+						let i = cell.index.y + 1;
+						i < gridProperties.division.value;
+						i++
+					) {
+						// The volume is decreased by a small amount for each step
+						// ...away from the button.
+						const volume = 0.7 - (counter / distanceToEdge) * 0.65;
+
+						// Add an object to the events array with the current cell,
+						// ... how far in the future the event will occur, and volume
+						events.push({
+							current:
+								currentGrid.grid[
+									gridProperties.division.value - i - 1
+								][cell.index.x],
+							delay: speedDivision * counter,
+							volume: volume,
+						});
+
+						// The counter gets incremented by 1 for each loop iteration
+						counter++;
+					}
+
+					// Now that the events array is filled with all of the data we need
+					// ... to schedule future events, we loop through it.
+					// forEach() is a method that loops through arrays in particular
+					events.forEach((event) => {
+						// setTimeout() delays code from happening until a time has elapsed
+						setTimeout(() => {
+							// The current cell's light is set to true
+							event.current.light = true;
+
+							// Send the message to the Max patch with the address, frequency,
+							// ... and volume
+							sendMessage(
+								"/north",
+								event.current.frequency.y,
+								event.volume
+							);
+
+							// Turn the light off after a short delay
+							setTimeout(() => {
+								event.current.light = false;
+							}, speedDivision);
+
+							// Schedule this event to happen after a delay
+						}, event.delay);
+					});
+				}
+
+				// If there is a neighbor to the south
+				if (neighbors.s) {
+					const events = [];
+					let counter = 1;
+
+					for (
+						let i = gridProperties.division.value - cell.index.y;
+						i < gridProperties.division.value;
+						i++
+					) {
+						const volume =
+							0.7 -
+							(counter /
+								(gridProperties.division.value -
+									cell.index.y)) *
+								0.65;
+
+						events.push({
+							current: currentGrid.grid[i][cell.index.x],
+							delay: speedDivision * counter,
+							volume: volume,
+						});
+
+						counter++;
+					}
+
+					events.forEach((event) => {
+						setTimeout(() => {
+							event.current.light = true;
+
+							sendMessage(
+								"/south",
+								event.current.frequency.y,
+								event.volume
+							);
+
+							setTimeout(() => {
+								event.current.light = false;
+							}, speedDivision);
+						}, event.delay);
+					});
+				}
+
+				//If there is a neighbor to the east
+				if (neighbors.e) {
+					const events = [];
+					let counter = 1;
+
+					for (
+						let i = cell.index.x + 1;
+						i < gridProperties.division.value;
+						i++
+					) {
+						const volume =
+							0.7 -
+							(counter /
+								(gridProperties.division.value -
+									cell.index.x -
+									1)) *
+								0.65;
+
+						events.push({
+							current:
+								currentGrid.grid[
+									gridProperties.division.value -
+										cell.index.y -
+										1
+								][i],
+							delay: speedDivision * counter,
+							volume: volume,
+						});
+
+						counter++;
+					}
+
+					events.forEach((event) => {
+						setTimeout(() => {
+							event.current.light = true;
+
+							sendMessage(
+								"/east",
+								event.current.frequency.x,
+								event.volume
+							);
+
+							setTimeout(() => {
+								event.current.light = false;
+							}, speedDivision);
+						}, event.delay);
+					});
+				}
+
+				// If there is a neighbor to the west
+				if (neighbors.w) {
+					const events = [];
+					let counter = 1;
+
+					for (let i = cell.index.x - 1; i >= 0; i--) {
+						const volume = 0.7 - (counter / cell.index.x) * 0.65;
+
+						events.push({
+							current:
+								currentGrid.grid[
+									gridProperties.division.value -
+										cell.index.y -
+										1
+								][i],
+							delay: speedDivision * counter,
+							volume: volume,
+						});
+
+						counter++;
+					}
+
+					events.forEach((event) => {
+						setTimeout(() => {
+							event.current.light = true;
+
+							sendMessage(
+								"/west",
+								event.current.frequency.x,
+								event.volume
+							);
+
+							setTimeout(() => {
+								event.current.light = false;
+							}, speedDivision);
+						}, event.delay);
+					});
+				}
+			}
 		}
-
-		grid.forEach((row) => {
-			row.forEach((c) => {
-				c.light = false;
-			});
-		});
 
 		// Turns the light on for the original button
 		cell.light = true;
@@ -335,7 +1047,28 @@
 		// Turns the original button's light off after a short delay
 		setTimeout(() => {
 			cell.light = false;
-		}, speedDivision * 1000);
+		}, speedDivision);
+
+		if (!gridProperties.testMode.x && !gridProperties.testMode.y) {
+		}
+	}
+
+	// For play along mode, this function is used to schedule the next event
+	function promptNextEvent() {
+		if (currentGrid.playAlongIndex < currentGrid.data.events.length) {
+			const event = currentGrid.data.events[currentGrid.playAlongIndex];
+			const cell = currentGrid.grid[event.y][event.x];
+			const delayCorrection =
+				event.delay - currentGrid.playAlongIndex * 1000;
+
+			setTimeout(() => {
+				cell.light = true;
+			}, delayCorrection);
+		} else {
+			currentGrid.playAlong = false;
+			currentGrid.playAlongIndex = 0;
+			resetCurrentGridData();
+		}
 	}
 
 	onMount(() => {
@@ -352,23 +1085,35 @@
 	<div
 		class="d-flex justify-content-center align-items-center flex-wrap w-100 h-100">
 		<!-- This iterates over the grid array, calling each element "row" -->
-		{#each grid as row}
+		{#each currentGrid.grid as row}
 			<!-- For each row in the grid, create a horizontal strip on the web page that aligns all 
 			of its contents horizontally and vertically -->
 			<div
 				class="d-flex justify-content-center align-items-center w-100"
-				style="height: calc(100% / {division} - 3px); gap: 3px;">
+				style="height: calc(100% / {gridProperties.division
+					.value} - 3px); gap: 3px;">
 				<!-- This iterates over each item in the row, calling each element "cell" -->
 				{#each row as cell}
 					<!-- For each cell, create a button that, when clicked, executes the gridButtonClick
 					function -->
 					<button
-						class="rounded-1 border-0 p-0 m-0 h-100 {cell.light
-							? 'default-bg'
-							: 'accent-bg'}"
-						style="width: calc(100% / {division} - 3px);"
+						class="rounded-1 border-0 p-0 m-0 h-100 user-select-none"
+						style="width: calc(100% / {gridProperties.division
+							.value} - 3px); background: {cell.light
+							? currentGrid.theme.accent
+							: currentGrid.theme.light};
+							color: {currentGrid.theme.text};"
 						aria-label="Grid button - {cell.x}, {cell.y}"
-						onclick={() => gridButtonClick(cell)}>
+						onclick={() => {
+							if (currentGrid.playAlong) {
+								currentGrid.playAlongIndex++;
+								promptNextEvent();
+							}
+							gridButtonClick(cell);
+						}}>
+						{cell.frequency.x.toFixed(0)}
+						<br />
+						{cell.frequency.y.toFixed(0)}
 					</button>
 				{/each}
 			</div>

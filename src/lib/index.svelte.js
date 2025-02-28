@@ -2,6 +2,12 @@
 export let darkMode = $state({
 	state: true,
 });
+export const defaultTheme = {
+	text: "#ffffff",
+	background: "#1b1b1c",
+	light: "#7897c2",
+	accent: "#e8be48",
+};
 export let showControls = $state({
 	state: false,
 });
@@ -9,22 +15,40 @@ export let gridProperties = $state({
 	division: {
 		min: 4,
 		max: 50,
-		value: 7,
+		value: randomInt(4, 20),
 		step: 1,
 	},
 	speed: {
-		min: 0.1,
-		max: 3,
-		value: 1,
-		step: 0.1,
+		min: 0.01,
+		max: 1,
+		value: randomFloat(0.01, 1),
+		step: 0.01,
+	},
+	scale: {
+		value: "default",
+		edo: 12,
 	},
 	x: {
-		low: 50,
-		high: 4000,
+		min: 20,
+		max: 19999,
+		step: 1,
+		low: randomInt(50, 400),
+		high: randomInt(1000, 4000),
 	},
 	y: {
-		low: 70,
-		high: 2000,
+		min: 21,
+		max: 20000,
+		step: 1,
+		low: randomInt(100, 600),
+		high: randomInt(800, 2000),
+	},
+	axisLimit: {
+		x: false,
+		y: false,
+	},
+	testMode: {
+		x: false,
+		y: false,
 	},
 });
 export let gridLength = $state({
@@ -32,7 +56,12 @@ export let gridLength = $state({
 });
 export let currentGrid = $state({
 	grid: null,
+	playAlong: false,
+	playAlongIndex: 0,
+	theme: defaultTheme,
 	data: {
+		events: null,
+		eventIds: null,
 		path: null,
 		data: null,
 		loaded: false,
@@ -50,16 +79,13 @@ export let currentGrid = $state({
 			min: null,
 			max: null,
 		},
-		gridProperties: {
-			division: 15,
-			x: {
-				low: 62,
-				high: 1984,
-			},
-			y: {
-				low: 93,
-				high: 1715,
-			},
-		},
 	},
 });
+
+function randomInt(min, max) {
+	return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function randomFloat(min, max) {
+	return (Math.random() * (max - min) + min).toFixed(2);
+}
