@@ -293,6 +293,7 @@
 			index: { x, y, number: index },
 			frequency: { x: Number(frequencyX), y: Number(frequencyY) },
 			light: false,
+			border: false,
 			color: null,
 		});
 
@@ -1047,6 +1048,7 @@
 		// Turns the original button's light off after a short delay
 		setTimeout(() => {
 			cell.light = false;
+			cell.border = false;
 		}, speedDivision);
 
 		if (!gridProperties.testMode.x && !gridProperties.testMode.y) {
@@ -1062,7 +1064,7 @@
 				event.delay - currentGrid.playAlongIndex * 1000;
 
 			setTimeout(() => {
-				cell.light = true;
+				cell.border = true;
 			}, delayCorrection);
 		} else {
 			currentGrid.playAlong = false;
@@ -1097,7 +1099,9 @@
 					<!-- For each cell, create a button that, when clicked, executes the gridButtonClick
 					function -->
 					<button
-						class="rounded-1 border-0 p-0 m-0 h-100 user-select-none"
+						class="rounded-1 p-0 m-0 h-100 user-select-none {cell.border
+							? 'border border-4 border-light'
+							: 'border-0'}"
 						style="width: calc(100% / {gridProperties.division
 							.value} - 3px); background: {cell.light
 							? currentGrid.theme.accent

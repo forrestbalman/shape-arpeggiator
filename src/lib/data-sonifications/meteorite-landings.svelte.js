@@ -27,7 +27,13 @@ export function meteoriteLandings() {
 		// Sort the data by year
 		// Limit the data to 100 entries (because the performance is supposed to be about a minute)
 		const uniqueCoordinates = new Set();
-		const filteredData = data
+
+		for (let i = data.length - 1; i > 0; i--) {
+			const j = Math.floor(Math.random() * (i + 1));
+			[data[i], data[j]] = [data[j], data[i]];
+		}
+
+		let filteredData = data
 			.filter(
 				(meteorite) =>
 					meteorite.year !== null || meteorite["mass (g)"] !== null
