@@ -7,6 +7,7 @@
 		showControls,
 		defaultTheme,
 	} from "$lib/index.svelte.js";
+	import { linear } from "svelte/easing";
 
 	let osc;
 
@@ -430,23 +431,23 @@
 					i < gridProperties.division.value;
 					i++
 				) {
-					// The volume is decreased by a small amount for each step
-					// ...away from the button.
-					const volume = Math.max(
-						0.25,
-						Math.min(0.75, 0.75 - (counter / distanceToEdge) * 0.5)
-					);
-
-					// Add an object to the events array with the current cell,
-					// ... how far in the future the event will occur, and volume
-					events.push({
-						current:
-							currentGrid.grid[
-								gridProperties.division.value - i - 1
-							][cell.index.x],
-						delay: speedDivision * counter,
-						volume: volume,
-					});
+					const volume =
+						// Add an object to the events array with the current cell,
+						// ... how far in the future the event will occur, and volume
+						events.push({
+							current:
+								currentGrid.grid[
+									gridProperties.division.value - i - 1
+								][cell.index.x],
+							delay: speedDivision * counter,
+							volume: linearConversion(
+								counter,
+								1,
+								distanceToEdge,
+								0.75,
+								0.1
+							),
+						});
 
 					// The counter gets incremented by 1 for each loop iteration
 					counter++;
@@ -484,24 +485,26 @@
 			// If there is a neighbor to the south
 			if (neighbors.s) {
 				const events = [];
+				const distanceToEdge = cell.index.y;
 				let counter = 1;
-				const distanceToEdge =
-					gridProperties.division.value - cell.index.y - 1;
+
+				console.log(distanceToEdge);
 
 				for (
 					let i = gridProperties.division.value - cell.index.y;
 					i < gridProperties.division.value;
 					i++
 				) {
-					const volume = Math.max(
-						0.25,
-						Math.min(0.75, 0.75 - (counter / distanceToEdge) * 0.5)
-					);
-
 					events.push({
 						current: currentGrid.grid[i][cell.index.x],
 						delay: speedDivision * counter,
-						volume: volume,
+						volume: linearConversion(
+							counter,
+							1,
+							distanceToEdge,
+							0.75,
+							0.1
+						),
 					});
 
 					counter++;
@@ -537,18 +540,19 @@
 					i < gridProperties.division.value;
 					i++
 				) {
-					const volume = Math.max(
-						0.25,
-						Math.min(0.75, 0.75 - (counter / distanceToEdge) * 0.5)
-					);
-
 					events.push({
 						current:
 							currentGrid.grid[
 								gridProperties.division.value - cell.index.y - 1
 							][i],
 						delay: speedDivision * counter,
-						volume: volume,
+						volume: linearConversion(
+							counter,
+							1,
+							distanceToEdge,
+							0.75,
+							0.1
+						),
 					});
 
 					counter++;
@@ -576,23 +580,23 @@
 			// If there is a neighbor to the west
 			if (neighbors.w) {
 				const events = [];
+				const distanceToEdge = cell.index.x;
 				let counter = 1;
-				const distanceToEdge =
-					gridProperties.division.value - cell.index.x - 1;
 
 				for (let i = cell.index.x - 1; i >= 0; i--) {
-					const volume = Math.max(
-						0.25,
-						Math.min(0.75, 0.75 - (counter / distanceToEdge) * 0.5)
-					);
-
 					events.push({
 						current:
 							currentGrid.grid[
 								gridProperties.division.value - cell.index.y - 1
 							][i],
 						delay: speedDivision * counter,
-						volume: volume,
+						volume: linearConversion(
+							counter,
+							1,
+							distanceToEdge,
+							0.75,
+							0.1
+						),
 					});
 
 					counter++;
@@ -643,7 +647,6 @@
 			}
 
 			if (gridProperties.axisLimit.x && !gridProperties.axisLimit.y) {
-				//If there is a neighbor to the east
 				checkEast();
 				checkWest();
 			}
@@ -671,9 +674,6 @@
 			cell.light = false;
 			cell.border = false;
 		}, speedDivision);
-
-		if (!gridProperties.testMode.x && !gridProperties.testMode.y) {
-		}
 	}
 
 	// For play along mode, this function is used to schedule the next event
@@ -730,10 +730,11 @@
 							color: {currentGrid.theme.text};"
 						aria-label="Grid button - {cell.x}, {cell.y}"
 						onclick={() => {
-							if (currentGrid.playAlong) {
+							if (currentGrid.playAlong && cell.border) {
 								currentGrid.playAlongIndex++;
 								promptNextEvent();
 							}
+
 							gridButtonClick(cell);
 						}}>
 					</button>

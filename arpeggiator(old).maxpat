@@ -2,43 +2,30 @@
 	"patcher" : 	{
 		"fileversion" : 1,
 		"appversion" : 		{
-			"major" : 8,
-			"minor" : 6,
-			"revision" : 4,
+			"major" : 9,
+			"minor" : 0,
+			"revision" : 5,
 			"architecture" : "x64",
 			"modernui" : 1
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 34.0, 77.0, 1515.0, 921.0 ],
-		"bglocked" : 0,
-		"openinpresentation" : 0,
-		"default_fontsize" : 12.0,
-		"default_fontface" : 0,
-		"default_fontname" : "Arial",
-		"gridonopen" : 1,
+		"rect" : [ 435.0, 112.0, 1428.0, 795.0 ],
 		"gridsize" : [ 15.0, 15.0 ],
-		"gridsnaponopen" : 1,
-		"objectsnaponopen" : 1,
-		"statusbarvisible" : 2,
-		"toolbarvisible" : 1,
-		"lefttoolbarpinned" : 0,
-		"toptoolbarpinned" : 0,
-		"righttoolbarpinned" : 0,
-		"bottomtoolbarpinned" : 0,
-		"toolbars_unpinned_last_save" : 0,
-		"tallnewobj" : 0,
-		"boxanimatetime" : 200,
-		"enablehscroll" : 1,
-		"enablevscroll" : 1,
-		"devicewidth" : 0.0,
-		"description" : "",
-		"digest" : "",
-		"tags" : "",
-		"style" : "",
-		"subpatcher_template" : "",
-		"assistshowspatchername" : 0,
 		"boxes" : [ 			{
+				"box" : 				{
+					"id" : "obj-18",
+					"linecount" : 4,
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 1066.0, 191.0, 50.0, 62.0 ],
+					"text" : "/west 3547.18042 0.05"
+				}
+
+			}
+, 			{
 				"box" : 				{
 					"fontname" : "Poppins",
 					"id" : "obj-17",
@@ -46,7 +33,7 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 524.0, 276.0, 487.0, 36.0 ],
+					"patching_rect" : [ 524.0, 276.0, 491.0, 30.0 ],
 					"text" : "poly~ instances for each cardinal direction. Sending them all to one poly~ sounded crackly during testing"
 				}
 
@@ -59,7 +46,7 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 524.0, 162.0, 487.0, 52.0 ],
+					"patching_rect" : [ 524.0, 162.0, 487.0, 42.0 ],
 					"text" : "a poly~ specific message that sends the contents to the first available instance.\n$1 - frequency\n$2 - volume"
 				}
 
@@ -72,7 +59,7 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 545.0, 68.0, 466.0, 36.0 ],
+					"patching_rect" : [ 545.0, 68.0, 466.0, 30.0 ],
 					"text" : "for rounting messages based on the address received (cardinal directions, want to expand to diagonals in the future)"
 				}
 
@@ -84,7 +71,7 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 155.0, 15.0, 278.0, 21.0 ],
+					"patching_rect" : [ 155.0, 15.0, 278.0, 18.0 ],
 					"text" : "for receiving messages from the UDP server"
 				}
 
@@ -104,12 +91,13 @@
 , 			{
 				"box" : 				{
 					"id" : "obj-13",
+					"linecount" : 2,
 					"maxclass" : "newobj",
 					"numinlets" : 1,
 					"numoutlets" : 1,
 					"outlettype" : [ "signal" ],
-					"patching_rect" : [ 429.0, 276.0, 93.0, 22.0 ],
-					"text" : "poly~ synth 100"
+					"patching_rect" : [ 429.0, 276.0, 107.0, 35.0 ],
+					"text" : "poly~ fmsynth-poly 100"
 				}
 
 			}
@@ -152,36 +140,39 @@
 , 			{
 				"box" : 				{
 					"id" : "obj-7",
+					"linecount" : 2,
 					"maxclass" : "newobj",
 					"numinlets" : 1,
 					"numoutlets" : 1,
 					"outlettype" : [ "signal" ],
-					"patching_rect" : [ 334.0, 276.0, 93.0, 22.0 ],
-					"text" : "poly~ synth 100"
+					"patching_rect" : [ 334.0, 276.0, 107.0, 35.0 ],
+					"text" : "poly~ fmsynth-poly 100"
 				}
 
 			}
 , 			{
 				"box" : 				{
 					"id" : "obj-4",
+					"linecount" : 2,
 					"maxclass" : "newobj",
 					"numinlets" : 1,
 					"numoutlets" : 1,
 					"outlettype" : [ "signal" ],
-					"patching_rect" : [ 239.0, 276.0, 93.0, 22.0 ],
-					"text" : "poly~ synth 100"
+					"patching_rect" : [ 239.0, 276.0, 107.0, 35.0 ],
+					"text" : "poly~ fmsynth-poly 100"
 				}
 
 			}
 , 			{
 				"box" : 				{
 					"id" : "obj-2",
+					"linecount" : 2,
 					"maxclass" : "newobj",
 					"numinlets" : 1,
 					"numoutlets" : 1,
 					"outlettype" : [ "signal" ],
-					"patching_rect" : [ 144.0, 276.0, 93.0, 22.0 ],
-					"text" : "poly~ synth 100"
+					"patching_rect" : [ 144.0, 276.0, 107.0, 35.0 ],
+					"text" : "poly~ fmsynth-poly 100"
 				}
 
 			}
@@ -256,8 +247,8 @@
 					"numinlets" : 1,
 					"numoutlets" : 1,
 					"outlettype" : [ "signal" ],
-					"patching_rect" : [ 49.0, 276.0, 93.0, 22.0 ],
-					"text" : "poly~ synth 100"
+					"patching_rect" : [ 26.0, 258.0, 132.0, 22.0 ],
+					"text" : "poly~ fmsynth-poly 100"
 				}
 
 			}
@@ -288,7 +279,16 @@
  ],
 		"lines" : [ 			{
 				"patchline" : 				{
+					"destination" : [ "obj-18", 1 ],
+					"order" : 0,
+					"source" : [ "obj-1", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
 					"destination" : [ "obj-3", 0 ],
+					"order" : 1,
 					"source" : [ "obj-1", 0 ]
 				}
 
@@ -428,6 +428,7 @@
 
 			}
  ],
+		"originid" : "pat-7254",
 		"parameters" : 		{
 			"obj-60" : [ "live.gain~", "live.gain~", 0 ],
 			"parameterbanks" : 			{
@@ -443,8 +444,8 @@
 		}
 ,
 		"dependency_cache" : [ 			{
-				"name" : "synth.maxpat",
-				"bootpath" : "~/Desktop/MUS 206/shape-arpeggiator",
+				"name" : "fmsynth-poly.maxpat",
+				"bootpath" : "~/Documents/UCSCGraduateStudents/ForrestBalman/shape-arpeggiator-Final",
 				"patcherrelativepath" : ".",
 				"type" : "JSON",
 				"implicit" : 1
